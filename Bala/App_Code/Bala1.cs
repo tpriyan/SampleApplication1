@@ -22,6 +22,47 @@ namespace BusinessLogic
             //
         }
 
+        public System.Data.DataTable DataTable()
+        {
+            System.Data.DataTable dt = new System.Data.DataTable();
+            dt.Columns.Add("ObjectGUID");
+            dt.Columns.Add("URL");
+
+            return dt;
+        }
+
+        public void LoadData(System.Web.UI.WebControls.GridView gridView)
+        {
+            string sqlQueryRead = "select * from InworldObjects";
+            System.Data.DataTable dataTable = this.DataTable();
+            System.Data.DataRow dataRow = null;
+
+
+            using (System.Data.SQLite.SQLiteConnection con = new System.Data.SQLite.SQLiteConnection("data source=" + HttpContext.Current.Server.MapPath("~/App_Data/Data.db")))
+            {
+                using (System.Data.SQLite.SQLiteCommand com = new System.Data.SQLite.SQLiteCommand(con))
+                {
+                    con.Open();
+                    com.CommandText = sqlQueryRead;
+                    using (System.Data.SQLite.SQLiteDataReader reader = com.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            dataRow = dataTable.NewRow();
+                            dataRow[0] = reader.GetValue(0);
+                            dataRow[1] = reader.GetValue(1);
+
+                            dataTable.Rows.Add(dataRow);
+                        }
+                    }
+                }               
+            }
+
+            gridView.DataSource = dataTable;
+            gridView.DataBind();
+
+        }
+
         public URLStatus createOrUpdateURL(string objectGuid, string URL)
         {
             string sqlQueryRead = "select * from InworldObjects where ObjectGUID = '{0}'";
