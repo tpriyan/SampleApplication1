@@ -9,6 +9,12 @@ namespace BusinessLogic
 {
     public class Bala1
     {
+        public enum URLStatus
+        {
+            AlreadyUpdate,
+            Updated,
+            Created
+        }
         public Bala1()
         {
             //
@@ -16,10 +22,14 @@ namespace BusinessLogic
             //
         }
 
-        public void createOrUpdateURL(string objectGuid, string URL)
+        public URLStatus createOrUpdateURL(string objectGuid, string URL)
         {
-            string sqlQueryRead = "select * from Objects where ObjectGUID = '{0}'";
-            string sqlQueryInsert = "insert into Objects(ObjectGUID, URL) values ('{0}', '{1}'";
+            string sqlQueryRead = "select * from InworldObjects where ObjectGUID = '{0}'";
+            string sqlQueryInsert = "insert into InworldObjects(ObjectGUID, URL) values ('{0}', '{1}')";
+            string sqlQueryUpdate = "update InworldObjects set URL = '{0}' where ObjectGUID = '{1}'";
+
+            URLStatus status;
+
             using (System.Data.SQLite.SQLiteConnection con = new System.Data.SQLite.SQLiteConnection("data source=" + HttpContext.Current.Server.MapPath("~/App_Data/Data.db")))
             {
                 using (System.Data.SQLite.SQLiteCommand com = new System.Data.SQLite.SQLiteCommand(con))
@@ -34,24 +44,31 @@ namespace BusinessLogic
                         {
                             if(reader["URL"].ToString() == URL)
                             {
-                                
+                                status = URLStatus.AlreadyUpdate;
+                            }
+                            else
+                            {
+                                reader.Close();
+                                com.CommandText = String.Format(sqlQueryUpdate, URL, objectGuid);
+                                com.ExecuteNonQuery();
+                                status = URLStatus.Updated;
                             }
                             
                         }
                         else
                         {
-
+                            reader.Close();
+                            com.CommandText = String.Format(sqlQueryInsert, objectGuid, URL);
+                            com.ExecuteNonQuery();
+                            status = URLStatus.Created;
                         }
                     }
-
-                    // Ok the record does not exist
-                    // Insert the record here
-                    com.CommandText = sqlQueryInsert;
-                    com.ExecuteNonQuery();
                     con.Close();
                 }
             }
+
+            return status;
         }
-        }
+        
     }
 }
